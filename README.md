@@ -48,38 +48,71 @@ wh-op-platform/
 
 ---
 
-## 快速启动
+## 部署
 
-### 环境要求
+## 部署
 
-- [Docker](https://www.docker.com/) >= 20.10
-- [Docker Compose](https://docs.docker.com/compose/) >= 2.0
+### 前置条件
 
-### 配置
+- [Docker Engine](https://www.docker.com/) >= 20.10
+- [Docker Compose](https://docs.docker.com/compose/) v2（`docker compose` 命令）
+- 网络可访问 MySQL 服务器 `10.126.50.199:3306`（如需 VPN 请确保 Docker 也在 VPN 网络内）
 
-1. 复制环境变量模板：
-   ```bash
-   cp .env.example .env
-   ```
-
-2. 编辑 `.env` 文件，填写 MySQL 连接信息：
-   ```bash
-   MYSQL_USER=your_username
-   MYSQL_PASSWORD=your_password
-   ```
-
-### 启动
+### 快速启动
 
 ```bash
-docker compose up --build
+# 1. 复制环境变量模板并填写实际 MySQL 用户名和密码
+cp .env.example .env
+# 编辑 .env，修改 MYSQL_USER 和 MYSQL_PASSWORD
+
+# 2. 一键构建并启动
+docker compose up --build -d
+
+# 3. 访问应用
+open http://localhost
 ```
 
-### 访问地址
+### 服务地址
 
-| 服务 | 地址 | 说明 |
-|---|---|---|
-| 前端 | http://localhost:80 | Vue 3 应用（Nginx） |
-| 后端 API | http://localhost:8080 | Spring Boot RESTful API |
-| 分析服务 | http://localhost:8000 | Python FastAPI |
+| 服务 | 容器端口 | 宿主机访问 | 说明 |
+|---|---|---|---|
+| 前端 | 80 | http://localhost | Vue 3 + Nginx 反向代理 |
+| 后端 API | 8080 | 不对外暴露（通过 Nginx `/api/` 转发） | Spring Boot RESTful API |
+| 分析服务 | 8000 | 不对外暴露（Backend 内部调用） | Python FastAPI |
 
-> **注意**：各服务的详细配置请参考对应目录下的 `application.yml`（后端）和 `config.py`（分析服务）。
+> 后端和分析服务仅在 Docker 内部网络可达，所有 API 请求统一通过 Nginx 端口 80 的 `/api/` 路径转发。
+
+### 停止与清理
+
+```bash
+# 停止服务（保留数据）
+docker compose down
+
+# 停止服务并清除 SQLite 预计算数据（下次启动会重新计算）
+docker compose down -v
+```
+
+### 常见问题
+
+**Q: MySQL 连接超时 / 无法连接**
+
+检查宿主机能否访问 MySQL：
+```bash
+nc -zv 10.126.50.199 3306
+```
+如果宿主机通过 VPN 访问，确保 Docker 容器也在同一网络。可尝试在 `docker-compose.yml` 中为 backend 和 analytics 添加 `network_mode: host`。
+
+**Q: 端口 80 被占用**
+
+修改 `docker-compose.yml` 中 frontend 的端口映射：
+```yaml
+ports:
+  - "8888:80"  # 改为其他可用端口
+```
+然后访问 `http://localhost:8888`。
+
+**Q: 首次构建很慢**
+
+Maven（后端）和 npm（前端）首次构建需要下载依赖，可能耗时较长。后续构建有 Docker 层缓存，速度会显著提升。
+
+> 各服务的详细配置请参考 `backend/src/main/resources/application.yml`（后端）和 `analytics/src/config.py`（分析服务）。
