@@ -141,7 +141,7 @@ onUnmounted(abortRequests)
     <template v-else>
     <!-- 筛选面板 -->
     <a-card class="mb-4">
-      <a-space>
+      <a-space wrap>
         <a-select
           v-model:value="filterWarehouse"
           placeholder="选择仓库"
@@ -176,7 +176,7 @@ onUnmounted(abortRequests)
 
     <!-- 双仓对比 -->
     <a-card title="双仓月度对比">
-      <a-space class="mb-4">
+      <a-space wrap class="mb-4">
         <a-select v-model:value="compareA" placeholder="仓库 A" style="width: 200px" :options="warehouses.map((w) => ({ value: w.warehouseCode, label: w.warehouseName }))" />
         <a-select v-model:value="compareB" placeholder="仓库 B" style="width: 200px" :options="warehouses.map((w) => ({ value: w.warehouseCode, label: w.warehouseName }))" />
         <a-button type="primary" :loading="compareLoading" :disabled="!compareA || !compareB" @click="handleCompare">对比</a-button>
