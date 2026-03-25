@@ -127,3 +127,20 @@ export function getReportDetail(id: string) {
 export function getWarehouses() {
   return http.get<never, WarehouseVO[]>('/warehouses')
 }
+
+// ─── AbortController 辅助 ───
+
+export function useAbortController() {
+  let controller = new AbortController()
+
+  function getSignal() {
+    controller = new AbortController()
+    return controller.signal
+  }
+
+  function abort() {
+    controller.abort()
+  }
+
+  return { getSignal, abort }
+}
