@@ -1,6 +1,7 @@
 package com.kejie.whop.controller;
 
 import com.kejie.whop.model.dto.ReportGenerateRequest;
+import com.kejie.whop.model.vo.PageResult;
 import com.kejie.whop.model.vo.ReportVO;
 import com.kejie.whop.model.vo.Result;
 import com.kejie.whop.service.ReportService;
@@ -23,8 +24,16 @@ public class ReportController {
     }
 
     @GetMapping("/list")
-    public Result<List<ReportVO>> list() {
-        return Result.ok(reportService.list());
+    public Result<?> list(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        List<ReportVO> all = reportService.list();
+        if (page != null && size != null) {
+            int fromIndex = Math.min((page - 1) * size, all.size());
+            int toIndex = Math.min(fromIndex + size, all.size());
+            return Result.ok(PageResult.of(all.subList(fromIndex, toIndex), all.size(), page, size));
+        }
+        return Result.ok(all);
     }
 
     @GetMapping("/{id}")
