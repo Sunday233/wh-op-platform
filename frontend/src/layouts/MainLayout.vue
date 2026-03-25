@@ -47,7 +47,7 @@ onMounted(async () => {
 
 <template>
   <a-layout style="min-height: 100vh">
-    <a-layout-sider v-model:collapsed="collapsed" collapsible>
+    <a-layout-sider v-model:collapsed="collapsed" collapsible breakpoint="md">
       <div
         style="
           height: 32px;
@@ -104,7 +104,7 @@ onMounted(async () => {
         <a-select
           v-model:value="appStore.currentWarehouse"
           placeholder="选择仓库"
-          style="width: 240px"
+          class="warehouse-select"
           :options="
             warehouses.map((w) => ({
               value: w.warehouseCode,
@@ -119,3 +119,14 @@ onMounted(async () => {
     </a-layout>
   </a-layout>
 </template>
+
+<style scoped>
+.warehouse-select {
+  width: 240px;
+}
+@media (max-width: 767px) {
+  .warehouse-select {
+    width: 160px;
+  }
+}
+</style>
