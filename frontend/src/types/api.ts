@@ -120,6 +120,7 @@ export interface ReportVO {
   startMonth: string
   endMonth: string
   createdAt: string
+  content?: string
 }
 
 // ─── Warehouse ───
