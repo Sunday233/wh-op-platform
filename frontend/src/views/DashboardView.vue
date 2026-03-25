@@ -130,22 +130,22 @@ onUnmounted(abortRequests)
     <a-spin v-else :spinning="loading">
       <!-- KPI 卡片 -->
       <a-row :gutter="16" class="mb-4">
-        <a-col :span="6">
+        <a-col :xs="24" :sm="12" :lg="6">
           <a-card>
             <a-statistic title="总单量" :value="overview?.totalOrders ?? '-'" suffix="单" />
           </a-card>
         </a-col>
-        <a-col :span="6">
+        <a-col :xs="24" :sm="12" :lg="6">
           <a-card>
             <a-statistic title="总工时" :value="overview?.totalWorkHours ?? '-'" suffix="h" :precision="1" />
           </a-card>
         </a-col>
-        <a-col :span="6">
+        <a-col :xs="24" :sm="12" :lg="6">
           <a-card>
             <a-statistic title="月度费用" :value="overview?.monthlyFee ?? '-'" prefix="¥" :precision="2" />
           </a-card>
         </a-col>
-        <a-col :span="6">
+        <a-col :xs="24" :sm="12" :lg="6">
           <a-card>
             <a-statistic title="人效" :value="overview?.laborEfficiency ?? '-'" suffix="件/人时" :precision="2" />
           </a-card>
@@ -163,13 +163,13 @@ onUnmounted(abortRequests)
       </a-row>
 
       <a-row :gutter="16">
-        <a-col :span="12">
+        <a-col :xs="24" :md="12">
           <a-card title="月度费用构成">
             <a-empty v-if="feeBreakdownData.length === 0 && !loading" description="暂无费用构成数据" />
             <v-chart v-else :option="feeOption" style="height: 320px" autoresize />
           </a-card>
         </a-col>
-        <a-col :span="12">
+        <a-col :xs="24" :md="12">
           <a-card title="操作类型工作量分布">
             <a-empty v-if="workloadData.length === 0 && !loading" description="暂无工作量分布数据" />
             <v-chart v-else :option="workloadOption" style="height: 320px" autoresize />
