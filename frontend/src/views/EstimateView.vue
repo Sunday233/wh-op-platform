@@ -112,7 +112,7 @@ onUnmounted(abortRequests)
     <template v-else>
     <a-row :gutter="16">
       <!-- 左侧：参数表单 -->
-      <a-col :span="12">
+      <a-col :xs="24" :md="12">
         <a-card title="参数输入">
           <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
             <a-row :gutter="16">
@@ -171,7 +171,7 @@ onUnmounted(abortRequests)
       </a-col>
 
       <!-- 右侧：计算结果 -->
-      <a-col :span="12">
+      <a-col :xs="24" :md="12">
         <a-card title="计算结果">
           <div v-if="!result" class="text-center py-8 text-gray-400">请填写参数后点击计算</div>
           <a-descriptions v-else bordered :column="1" size="small">
