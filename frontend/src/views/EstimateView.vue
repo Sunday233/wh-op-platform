@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted, computed } from 'vue'
+import axios from 'axios'
 import VChart from 'vue-echarts'
 import { useAppStore } from '@/stores/app'
 import { calculate, getEstimateDefaults, getWarehouseDetail } from '@/api'
@@ -9,6 +10,7 @@ import type { Rule } from 'ant-design-vue/es/form'
 const appStore = useAppStore()
 const formRef = ref()
 const loading = ref(false)
+const error = ref<string | null>(null)
 const result = ref<EstimateResultVO | null>(null)
 const historyData = ref<WarehouseDetailVO | null>(null)
 
@@ -37,11 +39,14 @@ const rules: Record<string, Rule[]> = {
 async function loadDefaults() {
   const wh = appStore.currentWarehouse
   if (!wh) return
+  error.value = null
   try {
     const defaults = await getEstimateDefaults(wh)
     Object.assign(form, defaults)
-  } catch {
-    // use current values
+  } catch (e) {
+    if (!axios.isCancel(e)) {
+      error.value = '默认参数加载失败，请重试'
+    }
   }
   try {
     historyData.value = await getWarehouseDetail(wh)
@@ -96,6 +101,12 @@ watch(() => appStore.currentWarehouse, () => {
 
 <template>
   <div class="p-4">
+    <a-result v-if="error" status="error" :title="error">
+      <template #extra>
+        <a-button type="primary" @click="loadDefaults">重试</a-button>
+      </template>
+    </a-result>
+    <template v-else>
     <a-row :gutter="16">
       <!-- 左侧：参数表单 -->
       <a-col :span="12">
@@ -179,5 +190,6 @@ watch(() => appStore.currentWarehouse, () => {
       </div>
       <v-chart v-else :option="compareOption" style="height: 320px" autoresize />
     </a-card>
+    </template>
   </div>
 </template>
