@@ -230,17 +230,17 @@ onUnmounted(abortRequests)
 
       <!-- 双仓因素对比 -->
       <a-card title="双仓因素对比">
-        <a-space class="mb-4">
+        <a-space wrap class="mb-4">
           <a-select v-model:value="compareA" placeholder="仓库 A" style="width: 200px" :options="warehouses.map((w) => ({ value: w.warehouseCode, label: w.warehouseName }))" />
           <a-select v-model:value="compareB" placeholder="仓库 B" style="width: 200px" :options="warehouses.map((w) => ({ value: w.warehouseCode, label: w.warehouseName }))" />
           <a-button type="primary" :loading="compareLoading" :disabled="!compareA || !compareB" @click="handleCompare">对比</a-button>
         </a-space>
         <a-row v-if="factorsA.length > 0 || factorsB.length > 0" :gutter="16">
-          <a-col :span="12">
+          <a-col :xs="24" :md="12">
             <a-empty v-if="factorsA.length === 0" description="暂无数据" />
             <v-chart v-else :option="compareOptionA" style="height: 360px" autoresize />
           </a-col>
-          <a-col :span="12">
+          <a-col :xs="24" :md="12">
             <a-empty v-if="factorsB.length === 0" description="暂无数据" />
             <v-chart v-else :option="compareOptionB" style="height: 360px" autoresize />
           </a-col>
