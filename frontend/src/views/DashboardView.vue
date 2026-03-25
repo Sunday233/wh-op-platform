@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
+import axios from 'axios'
 import VChart from 'vue-echarts'
 import { useAppStore } from '@/stores/app'
 import { getOverview, getTrend } from '@/api'
@@ -7,6 +8,7 @@ import type { DashboardOverviewVO, TrendDataVO } from '@/types/api'
 
 const appStore = useAppStore()
 const loading = ref(false)
+const error = ref<string | null>(null)
 const overview = ref<DashboardOverviewVO | null>(null)
 
 // 趋势数据
@@ -23,6 +25,7 @@ async function loadData() {
   const wh = appStore.currentWarehouse
   if (!wh) return
   loading.value = true
+  error.value = null
   try {
     const [ov, trend, fee, workload] = await Promise.all([
       getOverview(wh, currentMonth.value),
@@ -34,8 +37,10 @@ async function loadData() {
     trendData.value = trend
     feeBreakdownData.value = fee
     workloadData.value = workload
-  } catch {
-    // API 错误由拦截器处理
+  } catch (e) {
+    if (!axios.isCancel(e)) {
+      error.value = '数据加载失败，请重试'
+    }
   } finally {
     loading.value = false
   }
@@ -114,7 +119,12 @@ watch(() => appStore.currentWarehouse, loadData)
 
 <template>
   <div class="p-4">
-    <a-spin :spinning="loading">
+    <a-result v-if="error" status="error" :title="error">
+      <template #extra>
+        <a-button type="primary" @click="loadData">重试</a-button>
+      </template>
+    </a-result>
+    <a-spin v-else :spinning="loading">
       <!-- KPI 卡片 -->
       <a-row :gutter="16" class="mb-4">
         <a-col :span="6">
