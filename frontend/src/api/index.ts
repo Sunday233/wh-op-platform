@@ -50,23 +50,26 @@ http.interceptors.response.use(
 
 // ─── Dashboard ───
 
-export function getOverview(warehouseCode: string, month: string) {
+export function getOverview(warehouseCode: string, month: string, signal?: AbortSignal) {
   return http.get<never, DashboardOverviewVO>('/dashboard/overview', {
     params: { warehouseCode, month },
+    signal,
   })
 }
 
-export function getTrend(warehouseCode: string, startMonth: string, endMonth: string, type: string) {
+export function getTrend(warehouseCode: string, startMonth: string, endMonth: string, type: string, signal?: AbortSignal) {
   return http.get<never, TrendDataVO[]>('/dashboard/trend', {
     params: { warehouseCode, startMonth, endMonth, type },
+    signal,
   })
 }
 
 // ─── Baseline ───
 
-export function getMonthlyBaseline(warehouseCode?: string, year?: number, month?: number, page?: number, size?: number) {
+export function getMonthlyBaseline(warehouseCode?: string, year?: number, month?: number, page?: number, size?: number, signal?: AbortSignal) {
   return http.get<never, MonthlyBaselineVO[] | PageResult<MonthlyBaselineVO>>('/baseline/monthly', {
     params: { warehouseCode, year, month, page, size },
+    signal,
   })
 }
 
@@ -84,15 +87,17 @@ export function compareWarehouses(codes: string[], year?: number, month?: number
 
 // ─── Impact ───
 
-export function getFactors(warehouseCode: string) {
+export function getFactors(warehouseCode: string, signal?: AbortSignal) {
   return http.get<never, FactorRankVO[]>('/impact/factors', {
     params: { warehouseCode },
+    signal,
   })
 }
 
-export function getCorrelation(warehouseCode: string) {
+export function getCorrelation(warehouseCode: string, signal?: AbortSignal) {
   return http.get<never, CorrelationMatrixVO>('/impact/correlation', {
     params: { warehouseCode },
+    signal,
   })
 }
 
@@ -112,9 +117,10 @@ export function generateReport(request: ReportGenerateRequest) {
   return http.post<never, ReportVO>('/report/generate', request)
 }
 
-export function getReportList(page?: number, size?: number) {
+export function getReportList(page?: number, size?: number, signal?: AbortSignal) {
   return http.get<never, ReportVO[] | PageResult<ReportVO>>('/report/list', {
     params: { page, size },
+    signal,
   })
 }
 

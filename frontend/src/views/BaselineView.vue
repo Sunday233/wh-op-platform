@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed, onUnmounted } from 'vue'
 import axios from 'axios'
 import VChart from 'vue-echarts'
 import dayjs from 'dayjs'
 import { useAppStore } from '@/stores/app'
-import { getMonthlyBaseline, compareWarehouses, getWarehouses } from '@/api'
+import { getMonthlyBaseline, compareWarehouses, getWarehouses, useAbortController } from '@/api'
 import type { MonthlyBaselineVO, CompareResultVO, WarehouseVO, PageResult } from '@/types/api'
 
 const appStore = useAppStore()
@@ -13,6 +13,7 @@ const error = ref<string | null>(null)
 const baselineData = ref<MonthlyBaselineVO[]>([])
 const warehouses = ref<WarehouseVO[]>([])
 const pagination = ref({ current: 1, pageSize: 20, total: 0 })
+const { getSignal, abort: abortRequests } = useAbortController()
 
 // 筛选条件
 const filterWarehouse = ref<string | undefined>(undefined)
@@ -42,11 +43,12 @@ const columns = [
 async function loadData() {
   loading.value = true
   error.value = null
+  const signal = getSignal()
   try {
     const wh = filterWarehouse.value || undefined
     const year = filterMonth.value ? filterMonth.value.year() : undefined
     const month = filterMonth.value ? filterMonth.value.month() + 1 : undefined
-    const res = await getMonthlyBaseline(wh, year, month, pagination.value.current, pagination.value.pageSize)
+    const res = await getMonthlyBaseline(wh, year, month, pagination.value.current, pagination.value.pageSize, signal)
     if ('records' in res) {
       baselineData.value = (res as PageResult<MonthlyBaselineVO>).records
       pagination.value.total = (res as PageResult<MonthlyBaselineVO>).total
@@ -125,6 +127,8 @@ watch(() => appStore.currentWarehouse, (val) => {
   filterWarehouse.value = val ?? undefined
   loadData()
 })
+
+onUnmounted(abortRequests)
 </script>
 
 <template>

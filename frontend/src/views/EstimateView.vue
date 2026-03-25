@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted, computed } from 'vue'
+import { ref, reactive, watch, onMounted, computed, onUnmounted } from 'vue'
 import axios from 'axios'
 import VChart from 'vue-echarts'
 import { useAppStore } from '@/stores/app'
-import { calculate, getEstimateDefaults, getWarehouseDetail } from '@/api'
+import { calculate, getEstimateDefaults, getWarehouseDetail, useAbortController } from '@/api'
 import type { EstimateRequest, EstimateResultVO, WarehouseDetailVO } from '@/types/api'
 import type { Rule } from 'ant-design-vue/es/form'
 
@@ -11,6 +11,7 @@ const appStore = useAppStore()
 const formRef = ref()
 const loading = ref(false)
 const error = ref<string | null>(null)
+const { getSignal, abort: abortRequests } = useAbortController()
 const result = ref<EstimateResultVO | null>(null)
 const historyData = ref<WarehouseDetailVO | null>(null)
 
@@ -97,6 +98,8 @@ watch(() => appStore.currentWarehouse, () => {
   result.value = null
   loadDefaults()
 })
+
+onUnmounted(abortRequests)
 </script>
 
 <template>

@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed, onUnmounted } from 'vue'
 import axios from 'axios'
 import VChart from 'vue-echarts'
 import { useAppStore } from '@/stores/app'
-import { getFactors, getCorrelation, getTrend, getWarehouses } from '@/api'
+import { getFactors, getCorrelation, getTrend, getWarehouses, useAbortController } from '@/api'
 import type { FactorRankVO, CorrelationMatrixVO, TrendDataVO, WarehouseVO } from '@/types/api'
 
 const appStore = useAppStore()
 const loading = ref(false)
 const error = ref<string | null>(null)
+const { getSignal, abort: abortRequests } = useAbortController()
 const factors = ref<FactorRankVO[]>([])
 const correlation = ref<CorrelationMatrixVO | null>(null)
 const warehouses = ref<WarehouseVO[]>([])
@@ -35,8 +36,9 @@ async function loadData() {
   if (!wh) return
   loading.value = true
   error.value = null
+  const signal = getSignal()
   try {
-    const [f, c] = await Promise.all([getFactors(wh), getCorrelation(wh)])
+    const [f, c] = await Promise.all([getFactors(wh, signal), getCorrelation(wh, signal)])
     factors.value = f
     correlation.value = c
     if (f.length > 0 && !selectedFactor.value) {
@@ -56,7 +58,7 @@ async function loadScatter() {
   if (!wh || !selectedFactor.value) return
   scatterLoading.value = true
   try {
-    scatterData.value = await getTrend(wh, currentMonth.value, currentMonth.value, selectedFactor.value)
+    scatterData.value = await getTrend(wh, currentMonth.value, currentMonth.value, selectedFactor.value, getSignal())
   } catch {
     // handled
   } finally {
@@ -187,6 +189,8 @@ watch(() => appStore.currentWarehouse, () => {
   loadData()
 })
 watch(selectedFactor, loadScatter)
+
+onUnmounted(abortRequests)
 </script>
 
 <template>

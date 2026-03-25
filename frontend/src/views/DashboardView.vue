@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed, onUnmounted } from 'vue'
 import axios from 'axios'
 import VChart from 'vue-echarts'
 import { useAppStore } from '@/stores/app'
-import { getOverview, getTrend } from '@/api'
+import { getOverview, getTrend, useAbortController } from '@/api'
 import type { DashboardOverviewVO, TrendDataVO } from '@/types/api'
 
 const appStore = useAppStore()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const overview = ref<DashboardOverviewVO | null>(null)
+const { getSignal, abort: abortRequests } = useAbortController()
 
 // 趋势数据
 const trendData = ref<TrendDataVO[]>([])
@@ -26,12 +27,13 @@ async function loadData() {
   if (!wh) return
   loading.value = true
   error.value = null
+  const signal = getSignal()
   try {
     const [ov, trend, fee, workload] = await Promise.all([
-      getOverview(wh, currentMonth.value),
-      getTrend(wh, currentMonth.value, currentMonth.value, 'outbound_orders'),
-      getTrend(wh, currentMonth.value, currentMonth.value, 'monthly_fee_breakdown'),
-      getTrend(wh, currentMonth.value, currentMonth.value, 'workload_distribution'),
+      getOverview(wh, currentMonth.value, signal),
+      getTrend(wh, currentMonth.value, currentMonth.value, 'outbound_orders', signal),
+      getTrend(wh, currentMonth.value, currentMonth.value, 'monthly_fee_breakdown', signal),
+      getTrend(wh, currentMonth.value, currentMonth.value, 'workload_distribution', signal),
     ])
     overview.value = ov
     trendData.value = trend
@@ -115,6 +117,7 @@ const workloadOption = computed(() => ({
 
 onMounted(loadData)
 watch(() => appStore.currentWarehouse, loadData)
+onUnmounted(abortRequests)
 </script>
 
 <template>

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import dayjs from 'dayjs'
 import MarkdownIt from 'markdown-it'
-import { getReportList, generateReport, getReportDetail, getWarehouses } from '@/api'
+import { getReportList, generateReport, getReportDetail, getWarehouses, useAbortController } from '@/api'
 import type { ReportVO, WarehouseVO, ReportGenerateRequest, PageResult } from '@/types/api'
 import { message } from 'ant-design-vue'
 
@@ -11,6 +11,7 @@ const md = new MarkdownIt({ html: false })
 
 const loading = ref(false)
 const error = ref<string | null>(null)
+const { getSignal, abort: abortRequests } = useAbortController()
 const reports = ref<ReportVO[]>([])
 const warehouses = ref<WarehouseVO[]>([])
 const pagination = ref({ current: 1, pageSize: 20, total: 0 })
@@ -45,7 +46,7 @@ async function loadReports() {
   loading.value = true
   error.value = null
   try {
-    const res = await getReportList(pagination.value.current, pagination.value.pageSize)
+    const res = await getReportList(pagination.value.current, pagination.value.pageSize, getSignal())
     if ('records' in res) {
       reports.value = (res as PageResult<ReportVO>).records
       pagination.value.total = (res as PageResult<ReportVO>).total
@@ -166,6 +167,8 @@ onMounted(async () => {
   } catch { /* ignore */ }
   loadReports()
 })
+
+onUnmounted(abortRequests)
 </script>
 
 <template>
