@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
+import axios from 'axios'
 import VChart from 'vue-echarts'
 import dayjs from 'dayjs'
 import { useAppStore } from '@/stores/app'
@@ -8,6 +9,7 @@ import type { MonthlyBaselineVO, CompareResultVO, WarehouseVO, PageResult } from
 
 const appStore = useAppStore()
 const loading = ref(false)
+const error = ref<string | null>(null)
 const baselineData = ref<MonthlyBaselineVO[]>([])
 const warehouses = ref<WarehouseVO[]>([])
 const pagination = ref({ current: 1, pageSize: 20, total: 0 })
@@ -39,6 +41,7 @@ const columns = [
 
 async function loadData() {
   loading.value = true
+  error.value = null
   try {
     const wh = filterWarehouse.value || undefined
     const year = filterMonth.value ? filterMonth.value.year() : undefined
@@ -51,8 +54,10 @@ async function loadData() {
       baselineData.value = res as MonthlyBaselineVO[]
       pagination.value.total = baselineData.value.length
     }
-  } catch {
-    // handled by interceptor
+  } catch (e) {
+    if (!axios.isCancel(e)) {
+      error.value = '基线数据加载失败，请重试'
+    }
   } finally {
     loading.value = false
   }
@@ -124,6 +129,12 @@ watch(() => appStore.currentWarehouse, (val) => {
 
 <template>
   <div class="p-4">
+    <a-result v-if="error" status="error" :title="error">
+      <template #extra>
+        <a-button type="primary" @click="loadData">重试</a-button>
+      </template>
+    </a-result>
+    <template v-else>
     <!-- 筛选面板 -->
     <a-card class="mb-4">
       <a-space>
@@ -169,5 +180,6 @@ watch(() => appStore.currentWarehouse, (val) => {
       <div v-if="!compareOption && !compareLoading" class="text-center py-8 text-gray-400">请选择两个仓库后点击对比</div>
       <v-chart v-else-if="compareOption" :option="compareOption" style="height: 320px" autoresize />
     </a-card>
+    </template>
   </div>
 </template>
