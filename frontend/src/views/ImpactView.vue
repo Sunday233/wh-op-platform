@@ -199,13 +199,13 @@ watch(selectedFactor, loadScatter)
     <a-spin v-else :spinning="loading">
       <!-- 因素重要性排序 -->
       <a-card title="影响因素重要性排序" class="mb-4">
-        <div v-if="factors.length === 0 && !loading" class="text-center py-8 text-gray-400">暂无数据</div>
+        <a-empty v-if="factors.length === 0 && !loading" description="暂无影响因素数据" />
         <v-chart v-else :option="factorOption" style="height: 360px" autoresize />
       </a-card>
 
       <!-- Pearson 热力图 -->
       <a-card title="Pearson 相关系数热力图" class="mb-4">
-        <div v-if="!heatmapOption && !loading" class="text-center py-8 text-gray-400">暂无数据</div>
+        <a-empty v-if="!heatmapOption && !loading" description="暂无相关性数据" />
         <v-chart v-else-if="heatmapOption" :option="heatmapOption" style="height: 400px" autoresize />
       </a-card>
 
@@ -219,7 +219,7 @@ watch(selectedFactor, loadScatter)
           :options="factors.map((f) => ({ value: f.factorName, label: f.factorName }))"
         />
         <a-spin :spinning="scatterLoading">
-          <div v-if="scatterData.length === 0 && !scatterLoading" class="text-center py-8 text-gray-400">暂无数据</div>
+          <a-empty v-if="scatterData.length === 0 && !scatterLoading" description="暂无散点图数据" />
           <v-chart v-else :option="scatterOption" style="height: 320px" autoresize />
         </a-spin>
       </a-card>
@@ -233,11 +233,11 @@ watch(selectedFactor, loadScatter)
         </a-space>
         <a-row v-if="factorsA.length > 0 || factorsB.length > 0" :gutter="16">
           <a-col :span="12">
-            <div v-if="factorsA.length === 0" class="text-center py-8 text-gray-400">暂无数据</div>
+            <a-empty v-if="factorsA.length === 0" description="暂无数据" />
             <v-chart v-else :option="compareOptionA" style="height: 360px" autoresize />
           </a-col>
           <a-col :span="12">
-            <div v-if="factorsB.length === 0" class="text-center py-8 text-gray-400">暂无数据</div>
+            <a-empty v-if="factorsB.length === 0" description="暂无数据" />
             <v-chart v-else :option="compareOptionB" style="height: 360px" autoresize />
           </a-col>
         </a-row>

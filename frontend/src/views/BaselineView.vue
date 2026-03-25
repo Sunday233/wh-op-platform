@@ -166,7 +166,7 @@ watch(() => appStore.currentWarehouse, (val) => {
 
     <!-- 劳务单价对比图 -->
     <a-card title="加权平均劳务单价对比" class="mb-4">
-      <div v-if="baselineData.length === 0 && !loading" class="text-center py-8 text-gray-400">暂无数据</div>
+      <a-empty v-if="baselineData.length === 0 && !loading" description="暂无基线数据" />
       <v-chart v-else :option="priceOption" style="height: 320px" autoresize />
     </a-card>
 

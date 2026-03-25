@@ -153,7 +153,7 @@ watch(() => appStore.currentWarehouse, loadData)
       <a-row :gutter="16" class="mb-4">
         <a-col :span="24">
           <a-card title="日出库单量趋势">
-            <div v-if="trendData.length === 0 && !loading" class="text-center py-8 text-gray-400">暂无数据</div>
+            <a-empty v-if="trendData.length === 0 && !loading" description="暂无趋势数据" />
             <v-chart v-else :option="trendOption" style="height: 320px" autoresize />
           </a-card>
         </a-col>
@@ -162,13 +162,13 @@ watch(() => appStore.currentWarehouse, loadData)
       <a-row :gutter="16">
         <a-col :span="12">
           <a-card title="月度费用构成">
-            <div v-if="feeBreakdownData.length === 0 && !loading" class="text-center py-8 text-gray-400">暂无数据</div>
+            <a-empty v-if="feeBreakdownData.length === 0 && !loading" description="暂无费用构成数据" />
             <v-chart v-else :option="feeOption" style="height: 320px" autoresize />
           </a-card>
         </a-col>
         <a-col :span="12">
           <a-card title="操作类型工作量分布">
-            <div v-if="workloadData.length === 0 && !loading" class="text-center py-8 text-gray-400">暂无数据</div>
+            <a-empty v-if="workloadData.length === 0 && !loading" description="暂无工作量分布数据" />
             <v-chart v-else :option="workloadOption" style="height: 320px" autoresize />
           </a-card>
         </a-col>
