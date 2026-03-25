@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import axios from 'axios'
 import dayjs from 'dayjs'
 import MarkdownIt from 'markdown-it'
 import { getReportList, generateReport, getReportDetail, getWarehouses } from '@/api'
@@ -9,6 +10,7 @@ import { message } from 'ant-design-vue'
 const md = new MarkdownIt({ html: false })
 
 const loading = ref(false)
+const error = ref<string | null>(null)
 const reports = ref<ReportVO[]>([])
 const warehouses = ref<WarehouseVO[]>([])
 const pagination = ref({ current: 1, pageSize: 20, total: 0 })
@@ -41,6 +43,7 @@ const columns = [
 
 async function loadReports() {
   loading.value = true
+  error.value = null
   try {
     const res = await getReportList(pagination.value.current, pagination.value.pageSize)
     if ('records' in res) {
@@ -50,8 +53,10 @@ async function loadReports() {
       reports.value = res as ReportVO[]
       pagination.value.total = reports.value.length
     }
-  } catch {
-    // handled
+  } catch (e) {
+    if (!axios.isCancel(e)) {
+      error.value = '报告列表加载失败，请重试'
+    }
   } finally {
     loading.value = false
   }
@@ -165,6 +170,12 @@ onMounted(async () => {
 
 <template>
   <div class="p-4">
+    <a-result v-if="error" status="error" :title="error">
+      <template #extra>
+        <a-button type="primary" @click="loadReports">重试</a-button>
+      </template>
+    </a-result>
+    <template v-else>
     <!-- 操作栏 -->
     <a-card class="mb-4">
       <a-button type="primary" @click="openGenerateModal">生成报告</a-button>
@@ -222,5 +233,6 @@ onMounted(async () => {
         <div v-html="previewHtml" class="prose" />
       </a-spin>
     </a-drawer>
+    </template>
   </div>
 </template>
