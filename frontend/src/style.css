@@ -294,3 +294,12 @@ code {
     border-right-color: var(--border);
   }
 }
+
+/* 移动端图表高度自适应 */
+@media (max-width: 575px) {
+  .p-4 .ant-card-body [style*="height: 320px"],
+  .p-4 .ant-card-body [style*="height: 360px"],
+  .p-4 .ant-card-body [style*="height: 400px"] {
+    height: 240px !important;
+  }
+}
