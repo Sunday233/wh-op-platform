@@ -1,9 +1,238 @@
 <script setup lang="ts">
+import { ref, watch, onMounted, computed } from 'vue'
+import VChart from 'vue-echarts'
+import { useAppStore } from '@/stores/app'
+import { getFactors, getCorrelation, getTrend, getWarehouses } from '@/api'
+import type { FactorRankVO, CorrelationMatrixVO, TrendDataVO, WarehouseVO } from '@/types/api'
+
+const appStore = useAppStore()
+const loading = ref(false)
+const factors = ref<FactorRankVO[]>([])
+const correlation = ref<CorrelationMatrixVO | null>(null)
+const warehouses = ref<WarehouseVO[]>([])
+
+// 散点图
+const selectedFactor = ref<string | undefined>(undefined)
+const scatterData = ref<TrendDataVO[]>([])
+const scatterLoading = ref(false)
+
+// 双仓对比
+const compareA = ref<string | undefined>(undefined)
+const compareB = ref<string | undefined>(undefined)
+const compareLoading = ref(false)
+const factorsA = ref<FactorRankVO[]>([])
+const factorsB = ref<FactorRankVO[]>([])
+
+const currentMonth = computed(() => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+})
+
+async function loadData() {
+  const wh = appStore.currentWarehouse
+  if (!wh) return
+  loading.value = true
+  try {
+    const [f, c] = await Promise.all([getFactors(wh), getCorrelation(wh)])
+    factors.value = f
+    correlation.value = c
+    if (f.length > 0 && !selectedFactor.value) {
+      selectedFactor.value = f[0].factorName
+    }
+  } catch {
+    // handled by interceptor
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadScatter() {
+  const wh = appStore.currentWarehouse
+  if (!wh || !selectedFactor.value) return
+  scatterLoading.value = true
+  try {
+    scatterData.value = await getTrend(wh, currentMonth.value, currentMonth.value, selectedFactor.value)
+  } catch {
+    // handled
+  } finally {
+    scatterLoading.value = false
+  }
+}
+
+async function handleCompare() {
+  if (!compareA.value || !compareB.value) return
+  compareLoading.value = true
+  try {
+    const [a, b] = await Promise.all([getFactors(compareA.value), getFactors(compareB.value)])
+    factorsA.value = a
+    factorsB.value = b
+  } catch {
+    // handled
+  } finally {
+    compareLoading.value = false
+  }
+}
+
+// 因素排序图
+const factorOption = computed(() => {
+  const sorted = [...factors.value].sort((a, b) => Math.abs(a.correlation) - Math.abs(b.correlation))
+  return {
+    tooltip: {
+      trigger: 'axis' as const,
+      formatter: (params: { name: string; value: number }[]) => {
+        const p = params[0]
+        const f = factors.value.find((x) => x.factorName === p.name)
+        return `${p.name}<br/>相关系数: ${p.value?.toFixed(4)}<br/>${f?.description || ''}`
+      },
+    },
+    grid: { left: 140, right: 40, top: 10, bottom: 20 },
+    xAxis: { type: 'value' as const },
+    yAxis: { type: 'category' as const, data: sorted.map((d) => d.factorName) },
+    series: [{
+      type: 'bar' as const,
+      data: sorted.map((d) => ({
+        value: d.correlation,
+        itemStyle: { color: d.correlation >= 0 ? '#1890ff' : '#ff4d4f' },
+      })),
+    }],
+  }
+})
+
+// 热力图
+const heatmapOption = computed(() => {
+  if (!correlation.value) return null
+  const { factors: names, matrix } = correlation.value
+  const data: [number, number, number][] = []
+  for (let i = 0; i < matrix.length; i++) {
+    for (let j = 0; j < matrix[i].length; j++) {
+      data.push([j, i, matrix[i][j]])
+    }
+  }
+  return {
+    tooltip: {
+      formatter: (p: { data: [number, number, number] }) => {
+        const [x, y, v] = p.data
+        return `${names[y]} × ${names[x]}<br/>相关系数: ${v?.toFixed(4)}`
+      },
+    },
+    grid: { left: 140, right: 60, top: 10, bottom: 60 },
+    xAxis: { type: 'category' as const, data: names, axisLabel: { rotate: 45 } },
+    yAxis: { type: 'category' as const, data: names },
+    visualMap: { min: -1, max: 1, calculable: true, orient: 'vertical' as const, right: 0, top: 'center', inRange: { color: ['#2166ac', '#f7f7f7', '#b2182b'] } },
+    series: [{
+      type: 'heatmap' as const,
+      data,
+      emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.5)' } },
+    }],
+  }
+})
+
+// 散点图
+const scatterOption = computed(() => ({
+  tooltip: {
+    formatter: (p: { data: [number, number]; name: string }) => `${p.name}<br/>${selectedFactor.value}: ${p.data[0]}<br/>工时: ${p.data[1]}`,
+  },
+  grid: { left: 60, right: 20, top: 10, bottom: 40 },
+  xAxis: { type: 'value' as const, name: selectedFactor.value },
+  yAxis: { type: 'value' as const, name: '工时' },
+  series: [{
+    type: 'scatter' as const,
+    data: scatterData.value.map((d) => [d.value, d.value]),
+    symbolSize: 8,
+  }],
+}))
+
+// 双仓对比图工厂
+function compareFactorOption(data: FactorRankVO[], title: string) {
+  const sorted = [...data].sort((a, b) => Math.abs(a.correlation) - Math.abs(b.correlation))
+  return {
+    title: { text: title, left: 'center', textStyle: { fontSize: 14 } },
+    tooltip: { trigger: 'axis' as const },
+    grid: { left: 120, right: 20, top: 30, bottom: 10 },
+    xAxis: { type: 'value' as const },
+    yAxis: { type: 'category' as const, data: sorted.map((d) => d.factorName) },
+    series: [{
+      type: 'bar' as const,
+      data: sorted.map((d) => ({
+        value: d.correlation,
+        itemStyle: { color: d.correlation >= 0 ? '#1890ff' : '#ff4d4f' },
+      })),
+    }],
+  }
+}
+
+const compareOptionA = computed(() => {
+  const wh = warehouses.value.find((w) => w.warehouseCode === compareA.value)
+  return compareFactorOption(factorsA.value, wh?.warehouseName || '仓库 A')
+})
+const compareOptionB = computed(() => {
+  const wh = warehouses.value.find((w) => w.warehouseCode === compareB.value)
+  return compareFactorOption(factorsB.value, wh?.warehouseName || '仓库 B')
+})
+
+onMounted(async () => {
+  try {
+    warehouses.value = await getWarehouses()
+  } catch { /* ignore */ }
+  loadData()
+})
+
+watch(() => appStore.currentWarehouse, () => {
+  selectedFactor.value = undefined
+  loadData()
+})
+watch(selectedFactor, loadScatter)
 </script>
 
 <template>
-  <div class="p-6">
-    <h1>影响因素分析</h1>
-    <p>页面开发中...</p>
+  <div class="p-4">
+    <a-spin :spinning="loading">
+      <!-- 因素重要性排序 -->
+      <a-card title="影响因素重要性排序" class="mb-4">
+        <div v-if="factors.length === 0 && !loading" class="text-center py-8 text-gray-400">暂无数据</div>
+        <v-chart v-else :option="factorOption" style="height: 360px" autoresize />
+      </a-card>
+
+      <!-- Pearson 热力图 -->
+      <a-card title="Pearson 相关系数热力图" class="mb-4">
+        <div v-if="!heatmapOption && !loading" class="text-center py-8 text-gray-400">暂无数据</div>
+        <v-chart v-else-if="heatmapOption" :option="heatmapOption" style="height: 400px" autoresize />
+      </a-card>
+
+      <!-- 单因素散点图 -->
+      <a-card title="单因素散点图" class="mb-4">
+        <a-select
+          v-model:value="selectedFactor"
+          placeholder="选择因素"
+          style="width: 200px"
+          class="mb-4"
+          :options="factors.map((f) => ({ value: f.factorName, label: f.factorName }))"
+        />
+        <a-spin :spinning="scatterLoading">
+          <div v-if="scatterData.length === 0 && !scatterLoading" class="text-center py-8 text-gray-400">暂无数据</div>
+          <v-chart v-else :option="scatterOption" style="height: 320px" autoresize />
+        </a-spin>
+      </a-card>
+
+      <!-- 双仓因素对比 -->
+      <a-card title="双仓因素对比">
+        <a-space class="mb-4">
+          <a-select v-model:value="compareA" placeholder="仓库 A" style="width: 200px" :options="warehouses.map((w) => ({ value: w.warehouseCode, label: w.warehouseName }))" />
+          <a-select v-model:value="compareB" placeholder="仓库 B" style="width: 200px" :options="warehouses.map((w) => ({ value: w.warehouseCode, label: w.warehouseName }))" />
+          <a-button type="primary" :loading="compareLoading" :disabled="!compareA || !compareB" @click="handleCompare">对比</a-button>
+        </a-space>
+        <a-row v-if="factorsA.length > 0 || factorsB.length > 0" :gutter="16">
+          <a-col :span="12">
+            <div v-if="factorsA.length === 0" class="text-center py-8 text-gray-400">暂无数据</div>
+            <v-chart v-else :option="compareOptionA" style="height: 360px" autoresize />
+          </a-col>
+          <a-col :span="12">
+            <div v-if="factorsB.length === 0" class="text-center py-8 text-gray-400">暂无数据</div>
+            <v-chart v-else :option="compareOptionB" style="height: 360px" autoresize />
+          </a-col>
+        </a-row>
+        <div v-else class="text-center py-8 text-gray-400">请选择两个仓库后点击对比</div>
+      </a-card>
+    </a-spin>
   </div>
 </template>
