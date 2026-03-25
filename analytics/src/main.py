@@ -14,13 +14,22 @@ logging.basicConfig(
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    init_pool()
+    try:
+        init_pool()
+    except Exception:
+        logger.exception("MySQL pool init failed, service running in degraded mode")
     init_db()
     start_scheduler()
-    run_precompute()
+    try:
+        run_precompute()
+    except Exception:
+        logger.exception("Initial precompute failed, will retry on next schedule")
     yield
     # Shutdown
     stop_scheduler()

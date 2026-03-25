@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from fastapi import APIRouter, Query
 
 from src.db.sqlite_client import query_baseline_results, query_daily_metrics

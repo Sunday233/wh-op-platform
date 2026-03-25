@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import queue
 from contextlib import contextmanager
@@ -31,9 +33,10 @@ def _create_connection() -> pymysql.Connection:
 
 def init_pool() -> None:
     global _pool
-    _pool = queue.Queue(maxsize=_POOL_SIZE)
+    pool = queue.Queue(maxsize=_POOL_SIZE)
     for _ in range(_POOL_SIZE):
-        _pool.put(_create_connection())
+        pool.put(_create_connection())
+    _pool = pool
     logger.info("MySQL connection pool initialized (size=%d)", _POOL_SIZE)
 
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from fastapi import APIRouter, Query
 
 from src.db.sqlite_client import query_correlation_matrix, query_impact_factors
