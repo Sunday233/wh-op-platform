@@ -5,6 +5,14 @@ export interface Result<T> {
   data: T
 }
 
+/** 分页响应 */
+export interface PageResult<T> {
+  records: T[]
+  total: number
+  page: number
+  size: number
+}
+
 // ─── Dashboard ───
 
 export interface DashboardOverviewVO {

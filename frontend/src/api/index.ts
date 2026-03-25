@@ -2,6 +2,7 @@ import axios from 'axios'
 import { message } from 'ant-design-vue'
 import type {
   Result,
+  PageResult,
   DashboardOverviewVO,
   TrendDataVO,
   MonthlyBaselineVO,
@@ -53,9 +54,9 @@ export function getTrend(warehouseCode: string, startMonth: string, endMonth: st
 
 // ─── Baseline ───
 
-export function getMonthlyBaseline(warehouseCode?: string, year?: number, month?: number) {
-  return http.get<never, MonthlyBaselineVO[]>('/baseline/monthly', {
-    params: { warehouseCode, year, month },
+export function getMonthlyBaseline(warehouseCode?: string, year?: number, month?: number, page?: number, size?: number) {
+  return http.get<never, MonthlyBaselineVO[] | PageResult<MonthlyBaselineVO>>('/baseline/monthly', {
+    params: { warehouseCode, year, month, page, size },
   })
 }
 
@@ -101,8 +102,10 @@ export function generateReport(request: ReportGenerateRequest) {
   return http.post<never, ReportVO>('/report/generate', request)
 }
 
-export function getReportList() {
-  return http.get<never, ReportVO[]>('/report/list')
+export function getReportList(page?: number, size?: number) {
+  return http.get<never, ReportVO[] | PageResult<ReportVO>>('/report/list', {
+    params: { page, size },
+  })
 }
 
 export function getReportDetail(id: string) {

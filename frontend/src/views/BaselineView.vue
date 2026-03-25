@@ -4,12 +4,13 @@ import VChart from 'vue-echarts'
 import dayjs from 'dayjs'
 import { useAppStore } from '@/stores/app'
 import { getMonthlyBaseline, compareWarehouses, getWarehouses } from '@/api'
-import type { MonthlyBaselineVO, CompareResultVO, WarehouseVO } from '@/types/api'
+import type { MonthlyBaselineVO, CompareResultVO, WarehouseVO, PageResult } from '@/types/api'
 
 const appStore = useAppStore()
 const loading = ref(false)
 const baselineData = ref<MonthlyBaselineVO[]>([])
 const warehouses = ref<WarehouseVO[]>([])
+const pagination = ref({ current: 1, pageSize: 20, total: 0 })
 
 // 筛选条件
 const filterWarehouse = ref<string | undefined>(undefined)
@@ -42,12 +43,25 @@ async function loadData() {
     const wh = filterWarehouse.value || undefined
     const year = filterMonth.value ? filterMonth.value.year() : undefined
     const month = filterMonth.value ? filterMonth.value.month() + 1 : undefined
-    baselineData.value = await getMonthlyBaseline(wh, year, month)
+    const res = await getMonthlyBaseline(wh, year, month, pagination.value.current, pagination.value.pageSize)
+    if ('records' in res) {
+      baselineData.value = (res as PageResult<MonthlyBaselineVO>).records
+      pagination.value.total = (res as PageResult<MonthlyBaselineVO>).total
+    } else {
+      baselineData.value = res as MonthlyBaselineVO[]
+      pagination.value.total = baselineData.value.length
+    }
   } catch {
     // handled by interceptor
   } finally {
     loading.value = false
   }
+}
+
+function handleTableChange(pag: { current?: number; pageSize?: number }) {
+  pagination.value.current = pag.current ?? 1
+  pagination.value.pageSize = pag.pageSize ?? 20
+  loadData()
 }
 
 async function handleCompare() {
@@ -132,9 +146,10 @@ watch(() => appStore.currentWarehouse, (val) => {
         :data-source="baselineData"
         :loading="loading"
         :row-key="(r: MonthlyBaselineVO) => `${r.warehouseCode}_${r.year}_${r.month}`"
-        :pagination="{ pageSize: 10 }"
+        :pagination="{ current: pagination.current, pageSize: pagination.pageSize, total: pagination.total, showSizeChanger: true }"
         :scroll="{ x: 1300 }"
         size="small"
+        @change="handleTableChange"
       />
     </a-card>
 
