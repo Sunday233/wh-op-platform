@@ -33,7 +33,17 @@ http.interceptors.response.use(
     return Promise.reject(new Error(result.message))
   },
   (error) => {
-    message.error('网络错误，请稍后重试')
+    if (axios.isCancel(error)) {
+      // 请求被 AbortController 取消，静默处理
+      return Promise.reject(error)
+    }
+    if (error.code === 'ECONNABORTED') {
+      message.error('请求超时，请检查网络连接')
+    } else if (error.response && error.response.status >= 500) {
+      message.error('服务器繁忙，请稍后重试')
+    } else {
+      message.error('网络错误，请稍后重试')
+    }
     return Promise.reject(error)
   },
 )
