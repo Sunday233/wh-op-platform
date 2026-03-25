@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
+import axios from 'axios'
 import VChart from 'vue-echarts'
 import { useAppStore } from '@/stores/app'
 import { getFactors, getCorrelation, getTrend, getWarehouses } from '@/api'
@@ -7,6 +8,7 @@ import type { FactorRankVO, CorrelationMatrixVO, TrendDataVO, WarehouseVO } from
 
 const appStore = useAppStore()
 const loading = ref(false)
+const error = ref<string | null>(null)
 const factors = ref<FactorRankVO[]>([])
 const correlation = ref<CorrelationMatrixVO | null>(null)
 const warehouses = ref<WarehouseVO[]>([])
@@ -32,6 +34,7 @@ async function loadData() {
   const wh = appStore.currentWarehouse
   if (!wh) return
   loading.value = true
+  error.value = null
   try {
     const [f, c] = await Promise.all([getFactors(wh), getCorrelation(wh)])
     factors.value = f
@@ -39,8 +42,10 @@ async function loadData() {
     if (f.length > 0 && !selectedFactor.value) {
       selectedFactor.value = f[0].factorName
     }
-  } catch {
-    // handled by interceptor
+  } catch (e) {
+    if (!axios.isCancel(e)) {
+      error.value = '影响因素数据加载失败，请重试'
+    }
   } finally {
     loading.value = false
   }
@@ -186,7 +191,12 @@ watch(selectedFactor, loadScatter)
 
 <template>
   <div class="p-4">
-    <a-spin :spinning="loading">
+    <a-result v-if="error" status="error" :title="error">
+      <template #extra>
+        <a-button type="primary" @click="loadData">重试</a-button>
+      </template>
+    </a-result>
+    <a-spin v-else :spinning="loading">
       <!-- 因素重要性排序 -->
       <a-card title="影响因素重要性排序" class="mb-4">
         <div v-if="factors.length === 0 && !loading" class="text-center py-8 text-gray-400">暂无数据</div>
