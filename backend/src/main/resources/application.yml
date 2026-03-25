@@ -19,3 +19,6 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto
+
+analytics:
+  base-url: ${ANALYTICS_BASE_URL:http://localhost:8000}
