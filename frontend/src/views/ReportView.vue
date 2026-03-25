@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import dayjs from 'dayjs'
 import MarkdownIt from 'markdown-it'
 import { getReportList, generateReport, getReportDetail, getWarehouses } from '@/api'
-import type { ReportVO, WarehouseVO, ReportGenerateRequest } from '@/types/api'
+import type { ReportVO, WarehouseVO, ReportGenerateRequest, PageResult } from '@/types/api'
 import { message } from 'ant-design-vue'
 
 const md = new MarkdownIt({ html: false })
@@ -11,6 +11,7 @@ const md = new MarkdownIt({ html: false })
 const loading = ref(false)
 const reports = ref<ReportVO[]>([])
 const warehouses = ref<WarehouseVO[]>([])
+const pagination = ref({ current: 1, pageSize: 20, total: 0 })
 
 // 生成表单
 const modalVisible = ref(false)
@@ -41,12 +42,25 @@ const columns = [
 async function loadReports() {
   loading.value = true
   try {
-    reports.value = await getReportList()
+    const res = await getReportList(pagination.value.current, pagination.value.pageSize)
+    if ('records' in res) {
+      reports.value = (res as PageResult<ReportVO>).records
+      pagination.value.total = (res as PageResult<ReportVO>).total
+    } else {
+      reports.value = res as ReportVO[]
+      pagination.value.total = reports.value.length
+    }
   } catch {
     // handled
   } finally {
     loading.value = false
   }
+}
+
+function handleTableChange(pag: { current?: number; pageSize?: number }) {
+  pagination.value.current = pag.current ?? 1
+  pagination.value.pageSize = pag.pageSize ?? 20
+  loadReports()
 }
 
 function openGenerateModal() {
@@ -163,8 +177,9 @@ onMounted(async () => {
         :data-source="reports"
         :loading="loading"
         row-key="id"
-        :pagination="{ pageSize: 10 }"
+        :pagination="{ current: pagination.current, pageSize: pagination.pageSize, total: pagination.total, showSizeChanger: true }"
         size="small"
+        @change="handleTableChange"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'action'">
