@@ -21,4 +21,9 @@ public class WarehouseController {
     public Result<List<WarehouseVO>> list() {
         return Result.ok(warehouseService.list());
     }
+
+    @GetMapping("/available-months")
+    public Result<List<String>> availableMonths() {
+        return Result.ok(warehouseService.getAvailableMonths());
+    }
 }

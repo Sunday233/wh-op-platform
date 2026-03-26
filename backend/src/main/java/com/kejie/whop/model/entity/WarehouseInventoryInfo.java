@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
-@TableName("warehouse_inventory_info")
+@TableName("仓位库存信息表")
 public class WarehouseInventoryInfo {
 
     @TableId(value = "id", type = IdType.AUTO)

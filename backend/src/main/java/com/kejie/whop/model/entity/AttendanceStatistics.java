@@ -9,7 +9,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-@TableName("attendance_statistics")
+@TableName("出勤统计表")
 public class AttendanceStatistics {
 
     @TableId(value = "id", type = IdType.AUTO)

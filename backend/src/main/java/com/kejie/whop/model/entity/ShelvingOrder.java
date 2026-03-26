@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("shelving_order")
+@TableName("上架单表")
 public class ShelvingOrder {
 
     @TableId(value = "id", type = IdType.AUTO)

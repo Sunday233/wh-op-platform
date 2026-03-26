@@ -9,7 +9,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("workload_statistics_detail")
+@TableName("工作量统计操作明细表")
 public class WorkloadStatisticsDetail {
 
     @TableId(value = "id", type = IdType.AUTO)

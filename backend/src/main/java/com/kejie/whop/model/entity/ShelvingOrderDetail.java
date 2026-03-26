@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("shelving_order_detail")
+@TableName("上架单明细表")
 public class ShelvingOrderDetail {
 
     @TableId(value = "id", type = IdType.AUTO)

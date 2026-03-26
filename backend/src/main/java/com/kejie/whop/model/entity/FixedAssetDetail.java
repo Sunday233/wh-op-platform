@@ -9,7 +9,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-@TableName("fixed_asset_detail")
+@TableName("在账资产明细表")
 public class FixedAssetDetail {
 
     @TableId(value = "id", type = IdType.AUTO)

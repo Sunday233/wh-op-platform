@@ -141,6 +141,7 @@ public class BaselineService {
 
     private MonthlyBaselineVO buildMonthlyBaseline(String warehouseCode, String warehouseName,
                                                     Integer year, Integer month, String monthStr) {
+        String attWarehouseName = warehouseService.getAttendanceWarehouseName(warehouseName);
         // 出库单聚合
         QueryWrapper<OutboundOrder> orderQw = new QueryWrapper<>();
         orderQw.select("COUNT(*) as totalOrders",
@@ -151,7 +152,7 @@ public class BaselineService {
 
         long totalOrders = 0;
         long totalItems = 0;
-        if (!orderRows.isEmpty()) {
+        if (!orderRows.isEmpty() && orderRows.get(0) != null) {
             totalOrders = toLong(orderRows.get(0).get("totalOrders"));
             totalItems = toLong(orderRows.get(0).get("totalItems"));
         }
@@ -161,8 +162,8 @@ public class BaselineService {
         attQw.select("SUM(CAST(工作时长 AS DECIMAL(10,2))) as totalWorkHours",
                 "COUNT(DISTINCT 员工编码) as distinctEmployees",
                 "COUNT(DISTINCT 考勤日期) as workDays");
-        if (warehouseName != null) {
-            attQw.eq("库房", warehouseName);
+        if (attWarehouseName != null) {
+            attQw.eq("库房", attWarehouseName);
         }
         attQw.apply("DATE_FORMAT(考勤日期, '%Y-%m') = {0}", monthStr);
         List<Map<String, Object>> attRows = attendanceStatisticsMapper.selectMaps(attQw);
@@ -170,7 +171,7 @@ public class BaselineService {
         BigDecimal totalWorkHours = BigDecimal.ZERO;
         int workDays = 1;
         int avgHeadcount = 0;
-        if (!attRows.isEmpty()) {
+        if (!attRows.isEmpty() && attRows.get(0) != null) {
             Map<String, Object> att = attRows.get(0);
             totalWorkHours = toBigDecimal(att.get("totalWorkHours"));
             workDays = Math.max(1, toInt(att.get("workDays")));
@@ -212,14 +213,15 @@ public class BaselineService {
     }
 
     private int getWorkDays(String warehouseName, String monthStr) {
+        String attWarehouseName = warehouseService.getAttendanceWarehouseName(warehouseName);
         QueryWrapper<AttendanceStatistics> qw = new QueryWrapper<>();
         qw.select("COUNT(DISTINCT 考勤日期) as workDays");
-        if (warehouseName != null) {
-            qw.eq("库房", warehouseName);
+        if (attWarehouseName != null) {
+            qw.eq("库房", attWarehouseName);
         }
         qw.apply("DATE_FORMAT(考勤日期, '%Y-%m') = {0}", monthStr);
         List<Map<String, Object>> rows = attendanceStatisticsMapper.selectMaps(qw);
-        if (rows.isEmpty()) return 1;
+        if (rows.isEmpty() || rows.get(0) == null) return 1;
         return Math.max(1, toInt(rows.get(0).get("workDays")));
     }
 
@@ -241,10 +243,11 @@ public class BaselineService {
     }
 
     private Map<String, Object> getLaborDistribution(String warehouseName, String monthStr) {
+        String attWarehouseName = warehouseService.getAttendanceWarehouseName(warehouseName);
         QueryWrapper<AttendanceStatistics> qw = new QueryWrapper<>();
         qw.select("员工类型 as empType", "COUNT(DISTINCT 员工编码) as cnt");
-        if (warehouseName != null) {
-            qw.eq("库房", warehouseName);
+        if (attWarehouseName != null) {
+            qw.eq("库房", attWarehouseName);
         }
         qw.apply("DATE_FORMAT(考勤日期, '%Y-%m') = {0}", monthStr)
                 .groupBy("员工类型");

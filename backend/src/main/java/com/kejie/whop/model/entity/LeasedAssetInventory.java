@@ -9,7 +9,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-@TableName("leased_asset_inventory")
+@TableName("租赁资产库存导出表")
 public class LeasedAssetInventory {
 
     @TableId(value = "id", type = IdType.AUTO)

@@ -110,7 +110,7 @@ public class EstimateService {
                 .eq("库房编码", warehouseCode);
         List<Map<String, Object>> orderRows = outboundOrderMapper.selectMaps(orderQw);
 
-        if (!orderRows.isEmpty() && orderRows.get(0).get("totalOrders") != null) {
+        if (!orderRows.isEmpty() && orderRows.get(0) != null && orderRows.get(0).get("totalOrders") != null) {
             Map<String, Object> row = orderRows.get(0);
             long totalOrders = toLong(row.get("totalOrders"));
             long totalItems = toLong(row.get("totalItems"));
@@ -126,13 +126,14 @@ public class EstimateService {
         }
 
         // 从出勤统计表计算人效
+        String attWarehouseName = warehouseService.getAttendanceWarehouseName(warehouseName);
         QueryWrapper<AttendanceStatistics> attQw = new QueryWrapper<>();
         attQw.select("COUNT(DISTINCT 员工编码) as distinctEmployees",
                 "COUNT(DISTINCT 考勤日期) as attDays")
-                .eq("库房", warehouseName);
+                .eq("库房", attWarehouseName);
         List<Map<String, Object>> attRows = attendanceStatisticsMapper.selectMaps(attQw);
 
-        if (!attRows.isEmpty() && attRows.get(0).get("distinctEmployees") != null) {
+        if (!attRows.isEmpty() && attRows.get(0) != null && attRows.get(0).get("distinctEmployees") != null) {
             int employees = toInt(attRows.get(0).get("distinctEmployees"));
             int attDays = Math.max(1, toInt(attRows.get(0).get("attDays")));
             if (employees > 0 && defaults.getDailyOrders().compareTo(BigDecimal.ZERO) > 0) {
@@ -148,7 +149,7 @@ public class EstimateService {
                 .isNotNull("供应商结算单价");
         List<Map<String, Object>> priceRows = quotationInfoMapper.selectMaps(priceQw);
 
-        if (!priceRows.isEmpty() && priceRows.get(0).get("avgPrice") != null) {
+        if (!priceRows.isEmpty() && priceRows.get(0) != null && priceRows.get(0).get("avgPrice") != null) {
             BigDecimal avgPrice = toBigDecimal(priceRows.get(0).get("avgPrice")).setScale(2, RoundingMode.HALF_UP);
             defaults.setFixedLaborPrice(avgPrice);
             defaults.setTempLaborPrice(avgPrice.multiply(new BigDecimal("0.82")).setScale(2, RoundingMode.HALF_UP));

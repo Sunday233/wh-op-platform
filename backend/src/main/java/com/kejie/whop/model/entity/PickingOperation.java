@@ -9,7 +9,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("picking_operation")
+@TableName("拣货操作表")
 public class PickingOperation {
 
     @TableId(value = "id", type = IdType.AUTO)

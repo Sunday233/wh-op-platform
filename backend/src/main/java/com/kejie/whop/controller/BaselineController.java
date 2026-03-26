@@ -21,10 +21,12 @@ public class BaselineController {
     @GetMapping("/monthly")
     public Result<?> monthly(
             @RequestParam(required = false) String warehouseCode,
-            @RequestParam Integer year,
-            @RequestParam Integer month,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size) {
+        if (year == null) year = java.time.LocalDate.now().getYear();
+        if (month == null) month = java.time.LocalDate.now().getMonthValue();
         List<MonthlyBaselineVO> all = baselineService.getMonthlyBaseline(warehouseCode, year, month);
         if (page != null && size != null) {
             int fromIndex = Math.min((page - 1) * size, all.size());
@@ -37,16 +39,20 @@ public class BaselineController {
     @GetMapping("/warehouse/{warehouseCode}")
     public Result<WarehouseDetailVO> warehouseDetail(
             @PathVariable String warehouseCode,
-            @RequestParam Integer year,
-            @RequestParam Integer month) {
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month) {
+        if (year == null) year = java.time.LocalDate.now().getYear();
+        if (month == null) month = java.time.LocalDate.now().getMonthValue();
         return Result.ok(baselineService.getWarehouseDetail(warehouseCode, year, month));
     }
 
     @GetMapping("/compare")
     public Result<List<CompareResultVO>> compare(
             @RequestParam String codes,
-            @RequestParam Integer year,
-            @RequestParam Integer month) {
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month) {
+        if (year == null) year = java.time.LocalDate.now().getYear();
+        if (month == null) month = java.time.LocalDate.now().getMonthValue();
         return Result.ok(baselineService.compare(codes, year, month));
     }
 }

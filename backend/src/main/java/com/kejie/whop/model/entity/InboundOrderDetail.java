@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("inbound_order_detail")
+@TableName("入库单行明细表")
 public class InboundOrderDetail {
 
     @TableId(value = "id", type = IdType.AUTO)

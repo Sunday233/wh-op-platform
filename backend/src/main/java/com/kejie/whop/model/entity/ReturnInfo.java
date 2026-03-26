@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 @Data
-@TableName("return_info")
+@TableName("退货信息表")
 public class ReturnInfo {
 
     @TableId(value = "id", type = IdType.AUTO)

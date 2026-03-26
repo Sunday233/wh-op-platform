@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("warehouse_position_info")
+@TableName("仓位信息表")
 public class WarehousePositionInfo {
 
     @TableId(value = "id", type = IdType.AUTO)

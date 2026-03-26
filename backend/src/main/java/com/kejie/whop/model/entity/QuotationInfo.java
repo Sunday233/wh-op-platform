@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("quotation_info")
+@TableName("报价信息表")
 public class QuotationInfo {
 
     @TableId(value = "id", type = IdType.AUTO)

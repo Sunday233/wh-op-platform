@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 @Data
-@TableName("workload_statistics_info")
+@TableName("工作量统计信息表")
 public class WorkloadStatisticsInfo {
 
     @TableId(value = "id", type = IdType.AUTO)

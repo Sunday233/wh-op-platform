@@ -9,7 +9,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("material_basic_info")
+@TableName("物料基本信息表")
 public class MaterialBasicInfo {
 
     @TableId(value = "id", type = IdType.AUTO)

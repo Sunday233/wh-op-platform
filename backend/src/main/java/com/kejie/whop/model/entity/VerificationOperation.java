@@ -9,7 +9,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("verification_operation")
+@TableName("复核操作表")
 public class VerificationOperation {
 
     @TableId(value = "id", type = IdType.AUTO)

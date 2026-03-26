@@ -134,6 +134,10 @@ export function getWarehouses() {
   return http.get<never, WarehouseVO[]>('/warehouses')
 }
 
+export function getAvailableMonths() {
+  return http.get<never, string[]>('/available-months')
+}
+
 // ─── AbortController 辅助 ───
 
 export function useAbortController() {

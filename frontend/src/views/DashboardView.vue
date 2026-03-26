@@ -3,7 +3,7 @@ import { ref, watch, onMounted, computed, onUnmounted } from 'vue'
 import axios from 'axios'
 import VChart from 'vue-echarts'
 import { useAppStore } from '@/stores/app'
-import { getOverview, getTrend, useAbortController } from '@/api'
+import { getOverview, getTrend, getAvailableMonths, useAbortController } from '@/api'
 import type { DashboardOverviewVO, TrendDataVO } from '@/types/api'
 
 const appStore = useAppStore()
@@ -12,28 +12,44 @@ const error = ref<string | null>(null)
 const overview = ref<DashboardOverviewVO | null>(null)
 const { getSignal, abort: abortRequests } = useAbortController()
 
+// 月份选择
+const availableMonths = ref<string[]>([])
+const selectedMonth = ref<string>('')
+
 // 趋势数据
 const trendData = ref<TrendDataVO[]>([])
 const feeBreakdownData = ref<TrendDataVO[]>([])
 const workloadData = ref<TrendDataVO[]>([])
 
-const currentMonth = computed(() => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-})
+async function loadMonths() {
+  try {
+    const months = await getAvailableMonths()
+    availableMonths.value = months
+    if (months.length > 0 && !selectedMonth.value) {
+      selectedMonth.value = months[0]
+    }
+  } catch {
+    // fallback: use current month
+    const d = new Date()
+    const cur = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    availableMonths.value = [cur]
+    if (!selectedMonth.value) selectedMonth.value = cur
+  }
+}
 
 async function loadData() {
   const wh = appStore.currentWarehouse
-  if (!wh) return
+  if (!wh || !selectedMonth.value) return
   loading.value = true
   error.value = null
   const signal = getSignal()
+  const month = selectedMonth.value
   try {
     const [ov, trend, fee, workload] = await Promise.all([
-      getOverview(wh, currentMonth.value, signal),
-      getTrend(wh, currentMonth.value, currentMonth.value, 'outbound_orders', signal),
-      getTrend(wh, currentMonth.value, currentMonth.value, 'monthly_fee_breakdown', signal),
-      getTrend(wh, currentMonth.value, currentMonth.value, 'workload_distribution', signal),
+      getOverview(wh, month, signal),
+      getTrend(wh, month, month, 'outbound_orders', signal),
+      getTrend(wh, month, month, 'monthly_fee_breakdown', signal),
+      getTrend(wh, month, month, 'workload_distribution', signal),
     ])
     overview.value = ov
     trendData.value = trend
@@ -115,8 +131,12 @@ const workloadOption = computed(() => ({
   ],
 }))
 
-onMounted(loadData)
+onMounted(async () => {
+  await loadMonths()
+  loadData()
+})
 watch(() => appStore.currentWarehouse, loadData)
+watch(selectedMonth, loadData)
 onUnmounted(abortRequests)
 </script>
 
@@ -128,6 +148,13 @@ onUnmounted(abortRequests)
       </template>
     </a-result>
     <a-spin v-else :spinning="loading">
+      <!-- 月份选择器 -->
+      <div class="mb-4 flex items-center gap-2">
+        <span>数据月份：</span>
+        <a-select v-model:value="selectedMonth" style="width: 160px" placeholder="选择月份">
+          <a-select-option v-for="m in availableMonths" :key="m" :value="m">{{ m }}</a-select-option>
+        </a-select>
+      </div>
       <!-- KPI 卡片 -->
       <a-row :gutter="16" class="mb-4">
         <a-col :xs="24" :sm="12" :lg="6">

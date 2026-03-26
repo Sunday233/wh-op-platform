@@ -17,6 +17,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +52,7 @@ public class DashboardService {
         String whCode = warehouseCode;
         String whName = "";
         for (Map<String, Object> row : orderRows) {
+            if (row == null) continue;
             totalOrders += toLong(row.get("totalOrders"));
             totalItems += toLong(row.get("totalItems"));
             if (whCode == null || whCode.isEmpty()) {
@@ -61,12 +63,13 @@ public class DashboardService {
 
         // 2. 出勤统计聚合：总工时 & 日均人数 & 工作天数
         String warehouseName = warehouseCode != null ? warehouseService.getWarehouseName(warehouseCode) : null;
+        String attWarehouseName = warehouseService.getAttendanceWarehouseName(warehouseName);
         QueryWrapper<AttendanceStatistics> attQw = new QueryWrapper<>();
         attQw.select("SUM(CAST(工作时长 AS DECIMAL(10,2))) as totalWorkHours",
                 "COUNT(DISTINCT 员工编码) as distinctEmployees",
                 "COUNT(DISTINCT 考勤日期) as workDays");
-        if (warehouseName != null) {
-            attQw.eq("库房", warehouseName);
+        if (attWarehouseName != null) {
+            attQw.eq("库房", attWarehouseName);
         }
         if (month != null && !month.isEmpty()) {
             attQw.apply("DATE_FORMAT(考勤日期, '%Y-%m') = {0}", month);
@@ -76,7 +79,7 @@ public class DashboardService {
         BigDecimal totalWorkHours = BigDecimal.ZERO;
         int workDays = 1;
         int avgHeadcount = 0;
-        if (!attRows.isEmpty()) {
+        if (!attRows.isEmpty() && attRows.get(0) != null) {
             Map<String, Object> att = attRows.get(0);
             totalWorkHours = toBigDecimal(att.get("totalWorkHours"));
             workDays = Math.max(1, toInt(att.get("workDays")));
@@ -142,7 +145,7 @@ public class DashboardService {
                 .orderByAsc("DATE(创建时间)");
 
         List<Map<String, Object>> rows = outboundOrderMapper.selectMaps(qw);
-        return rows.stream().map(row -> {
+        return rows.stream().filter(Objects::nonNull).map(row -> {
             TrendDataVO vo = new TrendDataVO();
             vo.setDate(String.valueOf(row.get("dt")));
             vo.setWarehouseCode(String.valueOf(row.get("库房编码")));
@@ -156,12 +159,13 @@ public class DashboardService {
     private List<TrendDataVO> getFeeTrend(String warehouseCode, String startMonth, String endMonth) {
         // 按月聚合工时，再计算费用
         String warehouseName = warehouseCode != null ? warehouseService.getWarehouseName(warehouseCode) : null;
+        String attWarehouseName = warehouseService.getAttendanceWarehouseName(warehouseName);
 
         QueryWrapper<AttendanceStatistics> qw = new QueryWrapper<>();
         qw.select("DATE_FORMAT(考勤日期, '%Y-%m') as ym",
                 "SUM(CAST(工作时长 AS DECIMAL(10,2))) as totalHours", "库房");
-        if (warehouseName != null) {
-            qw.eq("库房", warehouseName);
+        if (attWarehouseName != null) {
+            qw.eq("库房", attWarehouseName);
         }
         applyMonthRangeAtt(qw, startMonth, endMonth);
         qw.groupBy("DATE_FORMAT(考勤日期, '%Y-%m')", "库房")
@@ -170,7 +174,7 @@ public class DashboardService {
         List<Map<String, Object>> rows = attendanceStatisticsMapper.selectMaps(qw);
         BigDecimal unitPrice = getWeightedUnitPrice(warehouseName);
 
-        return rows.stream().map(row -> {
+        return rows.stream().filter(Objects::nonNull).map(row -> {
             TrendDataVO vo = new TrendDataVO();
             vo.setDate(String.valueOf(row.get("ym")));
             vo.setWarehouseCode(warehouseCode != null ? warehouseCode : "");
@@ -196,7 +200,7 @@ public class DashboardService {
                 .orderByAsc("DATE(创建时间)");
 
         List<Map<String, Object>> rows = outboundOrderMapper.selectMaps(qw);
-        return rows.stream().map(row -> {
+        return rows.stream().filter(Objects::nonNull).map(row -> {
             TrendDataVO vo = new TrendDataVO();
             vo.setDate(String.valueOf(row.get("dt")));
             vo.setWarehouseCode(String.valueOf(row.get("库房编码")));
@@ -222,7 +226,7 @@ public class DashboardService {
                         .select("AVG(供应商结算单价) as avgPrice")
                         .eq("库房名称", warehouseName)
                         .isNotNull("供应商结算单价"));
-        if (rows.isEmpty() || rows.get(0).get("avgPrice") == null) {
+        if (rows.isEmpty() || rows.get(0) == null || rows.get(0).get("avgPrice") == null) {
             return new BigDecimal("20.00");
         }
         return toBigDecimal(rows.get(0).get("avgPrice")).setScale(2, RoundingMode.HALF_UP);
